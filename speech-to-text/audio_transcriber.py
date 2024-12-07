@@ -160,7 +160,7 @@ class AudioTranscriber:
         try:
             self.transcribing = True
             self.stream = create_audio_stream(
-                self.app_options.audio_device, self.process_audio
+                selected_device=1, callback=self.process_audio
             )
             self.stream.start()
             self._running.set()
