@@ -2,6 +2,7 @@ import asyncio
 import functools
 import queue
 import numpy as np
+import eel
 
 from typing import NamedTuple
 from faster_whisper import WhisperModel
@@ -18,7 +19,7 @@ class AppOptions(NamedTuple):
     noise_threshold: int = 5
     non_speech_threshold: float = 0.1
     include_non_speech: bool = False
-    create_audio_file: bool = True
+    create_audio_file: bool = False
     use_websocket_server: bool = False
     use_openai_api: bool = False
 
@@ -74,12 +75,11 @@ class AudioTranscriber:
                     
                     # get the transcribed segments from the partial function ran 
                     # inside a separate thread pool
-                    segments, _ = await self.event_loop.run_in_executor(
-                        executor, func
-                    )
+                    segments, _ = await self.event_loop.run_in_executor(executor, func)
                     
                     for segment in segments:
-                        print(segment)
+                        eel.on_receive_message(segment.text)
+                        print(segment.text)
                         
                 # if queue is empty skip to next iteration in queue
                 except queue.Empty:
@@ -126,41 +126,12 @@ class AudioTranscriber:
             else:
                 self.audio_data_list.clear()
 
-    # used for transcribing a audio file
-    def batch_transcribe_audio(self, audio_data: np.ndarray):
-        segment_list = []
-        segments, _ = self.whisper_model.transcribe(
-            audio=audio_data, **self.transcribe_settings
-        )
-        
-        for segment in segments:
-            word_list = []
-            if self.transcribe_settings["word_timestamps"] == True:
-                for word in segment.words:
-                    word_list.append(
-                        {
-                            "start": word.start,
-                            "end": word.end,
-                            "text": word.word,
-                        }
-                    )
-            segment_list.append(
-                {
-                    "start": segment.start,
-                    "end": segment.end,
-                    "text": segment.text,
-                    "words": word_list,
-                }
-            )
-            
-            print(segment_list)
-
     # used to start the live transcription
     async def start_transcription(self):
         try:
             self.transcribing = True
             self.stream = create_audio_stream(
-                selected_device=1, callback=self.process_audio
+                self.app_options.audio_device, self.process_audio
             )
             self.stream.start()
             self._running.set()
@@ -186,11 +157,12 @@ class AudioTranscriber:
                 self._transcribe_task = None
             
             # checks if create_audio_file is enabled and there is data in the list
+            # i have manually disabled this
             if self.app_options.create_audio_file and len(self.all_audio_data_list) > 0:
                 audio_data = np.concatenate(self.all_audio_data_list)
                 self.all_audio_data_list.clear()
                 write_audio("audio", "voice", audio_data)
-                self.batch_transcribe_audio(audio_data)
+                # self.batch_transcribe_audio(audio_data)
             
             # stop and close the stream
             if self.stream is not None:
