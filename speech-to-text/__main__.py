@@ -20,8 +20,12 @@ def start_transcription():
     global transcriber, event_loop, thread
     try:
         filtered_app_settings = {'audio_device': 0, 'silence_limit': 8, 'noise_threshold': 5, 'non_speech_threshold': 0.1, 'include_non_speech': False, 'create_audio_file': False, 'use_websocket_server': False, 'use_openai_api': False}
-        filtered_model_settings = {'model_size_or_path': 'base', 'device': 'cpu', 'device_index': 0, 'compute_type': 'default', 'cpu_threads': 0, 'num_workers': 1, 'local_files_only': False}
-        filtered_transcribe_settings = {'task': 'transcribe', 'beam_size': 5, 'best_of': 5, 'patience': 1, 'length_penalty': 1, 'repetition_penalty': 1, 'no_repeat_ngram_size': 0, 'temperature': [0, 0.2, 0.4, 0.6, 0.8, 1], 'compression_ratio_threshold': 2.4, 'log_prob_threshold': -1, 'no_speech_threshold': 0.6, 'condition_on_previous_text': True, 'suppress_blank': True, 'suppress_tokens': [-1], 'without_timestamps': False, 'max_initial_timestamp': 1, 'word_timestamps': False, 'prepend_punctuations': '\\"\'“¿([{-', 'append_punctuations': '\\"\'.。,，!！?？:：”)]}、', 'vad_filter': False, 'vad_parameters': {'threshold': 0.5, 'min_speech_duration_ms': 250, 'max_speech_duration_s': 0, 'min_silence_duration_ms': 2000, 'speech_pad_ms': 400}}
+        # Model Options: 
+        # tiny, tiny.en, base, base.en, small, small.en, medium
+        # medium.en, large-v1, large-v2, large-v3, distil-large-v2, distil-medium.en
+        # distil-small.en, distil-large-v3
+        filtered_model_settings = {'model_size_or_path': 'tiny', 'device': 'cpu', 'device_index': 0, 'compute_type': 'default', 'cpu_threads': 0, 'num_workers': 1, 'local_files_only': False}
+        filtered_transcribe_settings = {'language': 'zh', 'task': 'transcribe', 'beam_size': 5, 'best_of': 5, 'patience': 1, 'length_penalty': 1, 'repetition_penalty': 1, 'no_repeat_ngram_size': 0, 'temperature': [0, 0.2, 0.4, 0.6, 0.8, 1], 'compression_ratio_threshold': 2.4, 'log_prob_threshold': -1, 'no_speech_threshold': 0.6, 'condition_on_previous_text': True, 'suppress_blank': True, 'suppress_tokens': [-1], 'without_timestamps': False, 'max_initial_timestamp': 1, 'word_timestamps': False, 'prepend_punctuations': '\\"\'“¿([{-', 'append_punctuations': '\\"\'.。,，!！?？:：”)]}、', 'vad_filter': False, 'vad_parameters': {'threshold': 0.5, 'min_speech_duration_ms': 250, 'max_speech_duration_s': 0, 'min_silence_duration_ms': 2000, 'speech_pad_ms': 400}}
         
         whisper_model = WhisperModel(**filtered_model_settings)
         app_settings = AppOptions(**filtered_app_settings)
@@ -43,15 +47,33 @@ def start_transcription():
     except Exception as e:
         print(f"Error Message: {str(e)}")
         
-# def stop_transcription():
-#     global transcriber, event_loop, thread
-
+@eel.expose
+def stop_transcription():
+    global transcriber, event_loop, thread
+    # if transcriber is None:
+    #     return
+    transcriber_future = asyncio.run_coroutine_threadsafe(
+        transcriber.stop_transcription(), event_loop
+    )
+    
+    transcriber_future.result()
+    
+    if thread.is_alive():
+        event_loop.call_soon_threadsafe(event_loop.stop)
+        thread.join()
+    event_loop.close()
+    transcriber = None
+    event_loop = None
+    thread = None
+    
+    
+    
 def on_close(page, sockets):
     print(page, "was closed")
 
     if transcriber and transcriber.transcribing:
-        # stop_transcription()
-        print("stop transcription.")
+        stop_transcription()
+        print("Stopped transcription.")
     sys.exit()
     
 if __name__ == "__main__":

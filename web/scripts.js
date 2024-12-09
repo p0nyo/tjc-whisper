@@ -7,6 +7,10 @@ function startTranscription() {
   eel.start_transcription()
 }
 
+function stopTranscription() {
+  eel.stop_transcription()
+}
+
 function addText(message) {
   const transArea = document.getElementById("transcription");
   const newel = document.createElement("div");
@@ -28,6 +32,10 @@ document.addEventListener("DOMContentLoaded", function() {
     // alert('on click works');
     // addText("Transcription box works.")
     startTranscription();
+  })
+
+  stopButton.addEventListener('click', () => {
+    stopTranscription();
   })
 }); 
 
