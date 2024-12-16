@@ -1,4 +1,4 @@
-#!/Users/treysontsen/Documents/Personal/Projects/tjc-whisper/venv/bin/python
+#!/Users/treysontsen/Documents/projects/tjc-whisper/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 """
 Bottle is a fast and simple micro-framework for small web applications. It

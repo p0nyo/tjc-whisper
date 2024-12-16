@@ -1,4 +1,4 @@
-#!/Users/treysontsen/Documents/Personal/Projects/tjc-whisper/venv/bin/python
+#!/Users/treysontsen/Documents/projects/tjc-whisper/venv/bin/python3.12
 # -*- coding: UTF-8 -*-
 from __future__ import print_function, division, absolute_import
 

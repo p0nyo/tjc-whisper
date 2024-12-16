@@ -1,14 +1,6 @@
-.content-inner {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    margin: 10px 10px;
-    padding: 5px;
-    border-radius: 5px;
-    background-color: #fff;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-  }
+* {
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
 
 .message-area {
     padding: 5px;
@@ -16,17 +8,17 @@
     background: #f8f8f8;
     border-radius: 10px;
     border: 1px solid #ddd;
-    font-size: 12px;
+    font-size: 30px;
     line-height: 1.4;
     overflow: auto;
-    height: 220px;
+    height: 600px;
     scrollbar-width: thin;
     scrollbar-color: #888 #f1f1f1;
 }
 
 .transcription-button {
     height: 32px;
-    width: 180px;
+    width: fit-content;
     color: black;
     padding: 0 16px;
     text-align: center;
@@ -43,4 +35,14 @@
     word-wrap: break-word;
     white-space: normal;
     box-sizing: border-box;
+}
+
+.status-area {
+    background-color: red;
+    color: white;
+    border-radius: 5px;
+    width:fit-content;
+    height: fit-content;
+    padding: 8px;
+    margin: 10px 5px;
 }
