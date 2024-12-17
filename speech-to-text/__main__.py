@@ -78,4 +78,4 @@ def on_close(page, sockets):
     
 if __name__ == "__main__":
     print("hello world")
-    eel.start("index.html", size=(1024, 1024), close_callback=on_close)
+    eel.start("index.html", size=(1024, 900), close_callback=on_close)

@@ -2,6 +2,10 @@
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
+h1 {
+    font-size: 64px;
+}
+
 .message-area {
     padding: 5px;
     margin: 10px 5px;

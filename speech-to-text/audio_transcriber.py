@@ -81,6 +81,7 @@ class AudioTranscriber:
                         eel.on_receive_message(segment.text)
                         print(segment.text)
                         
+                        
                 # if queue is empty skip to next iteration in queue
                 except queue.Empty:
                     continue
