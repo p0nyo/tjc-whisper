@@ -1,6 +1,6 @@
 # Description
 
-A realtime speech-to-text program that can read and transcribe audio input to output the result onto a google doc.
+A realtime speech-to-text program that can read and transcribe live audio input to output the result onto a google doc.
 
 
 Created to help speed up the transcription process for tjc transcribers/translators during the annual general meeting.
