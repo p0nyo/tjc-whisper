@@ -12,6 +12,15 @@ from .vad import Vad
 from .utils.audio_util import create_audio_stream
 from .utils.file_util import write_audio
 
+import os.path
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient import errors
+from googleapiclient.discovery import build
+
+SCOPES = ["https://www.googleapis.com/auth/documents"]
 
 class AppOptions(NamedTuple):
     audio_device: int
@@ -49,6 +58,7 @@ class AudioTranscriber:
         self.stream = None
         self._running = asyncio.Event()
         self._transcribe_task = None
+        self.creds = authenticate_user()
     
     # used for transcribing the audio
     async def transcribe_audio(self):
@@ -56,6 +66,8 @@ class AudioTranscriber:
         transcribe_settings["without_timestamps"] = True
         transcribe_settings["word_timestamps"] = False
         
+        
+
         with ThreadPoolExecutor() as executor:
             while self.transcribing:
                 try:
@@ -76,10 +88,11 @@ class AudioTranscriber:
                     # get the transcribed segments from the partial function ran 
                     # inside a separate thread pool
                     segments, _ = await self.event_loop.run_in_executor(executor, func)
-                    
+
                     for segment in segments:
                         eel.on_receive_message(segment.text)
-                        print(segment.text)
+                        print(f"Transcription Text: '{segment.text}'")
+                        append_to_doc(self.creds, segment.text)
                         
                         
                 # if queue is empty skip to next iteration in queue
@@ -177,4 +190,54 @@ class AudioTranscriber:
                  
         except Exception as e:
             print(str(e))
-        
+
+
+def authenticate_user():
+    """Calls the Apps Script API."""
+    creds = None
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                "credentials.json", SCOPES
+            )
+            creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+            with open("token.json", "w") as token:
+                token.write(creds.to_json())
+
+    return creds
+
+def append_to_doc(creds, text):
+    try:
+        service = build('docs', 'v1', credentials=creds)
+
+        document_id="1_Rp4KHVh9g8fz8fnBucvheELzBB6M7rX6IY-MYNwwXk"
+
+        document = service.documents().get(documentId=document_id).execute()
+        end_index = document['body']['content'][-1]['endIndex']
+
+        requests = [
+            {
+                'insertText': {
+                    'location': {
+                        'index': end_index - 1,
+                    },
+                    'text': text,
+                }
+            },
+        ]
+
+        service.documents().batchUpdate(documentId=document_id, body={'requests': requests}).execute()
+
+        print(f"Success! Appended to Google Doc ID: '{document_id}'")
+    except errors.HttpError as error:
+        # The API encountered a problem.
+        print(error.content)
