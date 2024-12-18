@@ -3,6 +3,9 @@
 A realtime speech-to-text program that can read and transcribe audio input to output the result onto a google doc.
 
 
+Created to help speed up the transcription process for tjc transcribers/translators during annual general meetings.
+
+
 Backend created using openai's whisper api and the google docs api.
 
 
