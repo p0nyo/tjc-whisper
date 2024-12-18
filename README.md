@@ -1,6 +1,6 @@
 # Description
 
-A realtime speech-to-text program that can read audio input and output it onto a google doc.
+A realtime speech-to-text program that can read and transcribe audio input to output the result onto a google doc.
 
 
 Backend created using openai's whisper api and the google docs api.
