@@ -1,6 +1,16 @@
+# TODO
+
+- [ ] translation feature
+- [ ] rtmp stream input
+- [ ] swap between audio inputs
+- [ ] change settings on the gui 
+
 # Description
 
-A realtime speech-to-text program that can read audio input and output it onto a google doc.
+A realtime speech-to-text program that can read and transcribe live audio input to output the result onto a google doc.
+
+
+Created to help speed up the transcription process for tjc transcribers/translators during the annual general meeting.
 
 
 Backend created using openai's whisper api and the google docs api.
