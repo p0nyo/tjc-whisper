@@ -219,7 +219,7 @@ def append_to_doc(creds, text):
     try:
         service = build('docs', 'v1', credentials=creds)
 
-        document_id="1_Rp4KHVh9g8fz8fnBucvheELzBB6M7rX6IY-MYNwwXk"
+        document_id="1gUf_TZvFwVfvWT74IKsh5YmJ0Fo8HoRtGxzHPPBVHUY"
 
         document = service.documents().get(documentId=document_id).execute()
         end_index = document['body']['content'][-1]['endIndex']
