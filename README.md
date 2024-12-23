@@ -5,7 +5,7 @@
 
 - [ ] swap between audio inputs
 - [ ] ability to change settings on the gui 
-- [x] translation feature
+- [x] translation feature (implemented with aws translate)
 
 # Description
 
