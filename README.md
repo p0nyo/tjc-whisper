@@ -14,7 +14,7 @@ A realtime speech-to-text program that can read and transcribe live audio input 
 
 Created to help speed up the transcription process for tjc transcribers during the annual general meeting.
 
-Frontend gui created using the eel python library.
+Frontend gui created using the eel python library, html, css and javascript.
 
 Backend created using a few apis, notably:
   - faster-whisper, a reimplementation of openai's whisper model, used for the transcription of text
