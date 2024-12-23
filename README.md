@@ -6,6 +6,7 @@
 - [ ] swap between audio inputs
 - [ ] ability to change settings on the gui 
 - [x] translation feature (implemented with aws translate)
+- [ ] installation process for google docs and amazon translate setup
 
 # Description
 
