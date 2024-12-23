@@ -1,9 +1,11 @@
+# notes
+- audio input device is set to 1 instead of 0
+
 # TODO
 
-- [ ] translation feature
-- [ ] rtmp stream input
 - [ ] swap between audio inputs
-- [ ] change settings on the gui 
+- [ ] ability to change settings on the gui 
+- [x] translation feature
 
 # Description
 
