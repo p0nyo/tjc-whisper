@@ -19,6 +19,7 @@ thread: threading.Thread = None
 def start_transcription():
     global transcriber, event_loop, thread
     try:
+<<<<<<< HEAD
         filtered_app_settings = {'audio_device': 0, 
                                  'silence_limit': 1, 
                                  'noise_threshold': 9, 
@@ -27,6 +28,9 @@ def start_transcription():
                                  'create_audio_file': False, 
                                  'use_websocket_server': False, 
                                  'use_openai_api': False}
+=======
+        filtered_app_settings = {'audio_device': 1, 'silence_limit': 8, 'noise_threshold': 5, 'non_speech_threshold': 0.1, 'include_non_speech': False, 'create_audio_file': False, 'use_websocket_server': False, 'use_openai_api': False}
+>>>>>>> 278ee1b437f7217c8230f70c9fa46a74f56524d9
         # Model Options: 
         # tiny, tiny.en, base, base.en, small, small.en, medium
         # medium.en, large-v1, large-v2, large-v3, distil-large-v2, distil-medium.en

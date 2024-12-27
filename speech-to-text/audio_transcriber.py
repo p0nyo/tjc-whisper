@@ -3,6 +3,7 @@ import functools
 import queue
 import numpy as np
 import eel
+import boto3
 
 from typing import NamedTuple
 from faster_whisper import WhisperModel
@@ -59,14 +60,17 @@ class AudioTranscriber:
         self._running = asyncio.Event()
         self._transcribe_task = None
         self.creds = authenticate_user()
+        self.boto_session = boto3.Session(profile_name="default")
     
     # used for transcribing the audio
     async def transcribe_audio(self):
         transcribe_settings = self.transcribe_settings.copy()
         transcribe_settings["without_timestamps"] = True
         transcribe_settings["word_timestamps"] = False
-        
-        
+        try:
+            translate = self.boto_session.client(service_name="translate", region_name="ap-southeast-2", use_ssl=True)
+        except Exception as e:
+            print(str(e))
 
         with ThreadPoolExecutor() as executor:
             while self.transcribing:
@@ -90,9 +94,21 @@ class AudioTranscriber:
                     segments, _ = await self.event_loop.run_in_executor(executor, func)
 
                     for segment in segments:
-                        eel.on_receive_message(segment.text)
-                        print(f"Transcription Text: '{segment.text}'")
-                        append_to_doc(self.creds, segment.text)
+                        result = translate.translate_text(Text=segment.text, 
+                        SourceLanguageCode="en", 
+                        TargetLanguageCode="zh-TD")
+
+                        transcription_text = segment.text
+                        translation_text = result.get("TranslatedText")
+
+                        eel.on_receive_message(transcription_text)
+                        eel.on_receive_message(translation_text)
+
+                        print(f"Transcription Text: '{transcription_text}'") 
+                        print(f"Translation Text: {translation_text}") 
+
+                        append_to_doc(self.creds, transcription_text)
+                        append_to_doc(self.creds, translation_text)
                         
                         
                 # if queue is empty skip to next iteration in queue

@@ -1,22 +1,26 @@
+# notes
+- audio input device is set to 1 instead of 0
+
 # TODO
 
-- [ ] translation feature
-- [ ] rtmp stream input
 - [ ] swap between audio inputs
-- [ ] change settings on the gui 
+- [ ] ability to change settings on the gui 
+- [x] translation feature (implemented with aws translate)
+- [ ] installation process for google docs and amazon translate setup
 
 # Description
 
-A realtime speech-to-text program that can read and transcribe live audio input to output the result onto a google doc.
+A realtime speech-to-text tool that can read and transcribe live audio input to output the result onto a google doc.
 
 
-Created to help speed up the transcription process for tjc transcribers/translators during the annual general meeting.
+Created to help speed up the transcription process for tjc transcribers during the annual general meeting.
 
+Frontend gui created using the eel python library, html, css and javascript.
 
-Backend created using openai's whisper api and the google docs api.
-
-
-Frontend gui created using the eel python library.
+Backend created using a few apis, notably:
+  - faster-whisper, a reimplementation of openai's whisper model, used for the transcription of text
+  - google docs api, used for output to allow transcribers to make edits to the transcribed text
+  - amazon translate api, used for translating the transcribed text
 
 # Instructions
 
