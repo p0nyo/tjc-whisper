@@ -94,21 +94,21 @@ class AudioTranscriber:
                     segments, _ = await self.event_loop.run_in_executor(executor, func)
 
                     for segment in segments:
-                        result = translate.translate_text(Text=segment.text, 
-                        SourceLanguageCode="en", 
-                        TargetLanguageCode="zh-TD")
+                        # result = translate.translate_text(Text=segment.text, 
+                        # SourceLanguageCode="en", 
+                        # TargetLanguageCode="zh-TD")
 
                         transcription_text = segment.text
-                        translation_text = result.get("TranslatedText")
+                        # translation_text = result.get("TranslatedText")``
 
                         eel.on_receive_message(transcription_text)
-                        eel.on_receive_message(translation_text)
+                        # eel.on_receive_message(translation_text)
 
                         print(f"Transcription Text: '{transcription_text}'") 
-                        print(f"Translation Text: {translation_text}") 
+                        # print(f"Translation Text: {translation_text}") 
 
                         append_to_doc(self.creds, transcription_text)
-                        append_to_doc(self.creds, translation_text)
+                        # append_to_doc(self.creds, translation_text)
                         
                         
                 # if queue is empty skip to next iteration in queue
