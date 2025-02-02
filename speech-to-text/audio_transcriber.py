@@ -4,6 +4,7 @@ import queue
 import numpy as np
 import eel
 import boto3
+import soundfile as sf
 
 from typing import NamedTuple
 from faster_whisper import WhisperModel
@@ -25,7 +26,7 @@ SCOPES = ["https://www.googleapis.com/auth/documents"]
 
 class AppOptions(NamedTuple):
     audio_device: int
-    silence_limit: int = 8
+    silence_limit: int = 1
     noise_threshold: int = 5
     non_speech_threshold: float = 0.1
     include_non_speech: bool = False
@@ -59,29 +60,39 @@ class AudioTranscriber:
         self.stream = None
         self._running = asyncio.Event()
         self._transcribe_task = None
-        self.creds = authenticate_user()
-        self.boto_session = boto3.Session(profile_name="default")
+        self.executor = ThreadPoolExecutor()
+        # self.creds = authenticate_user()
+        # self.boto_session = boto3.Session(profile_name="default")
     
     # used for transcribing the audio
     async def transcribe_audio(self):
+        print("Function Started . . .")
+
         transcribe_settings = self.transcribe_settings.copy()
         transcribe_settings["without_timestamps"] = True
         transcribe_settings["word_timestamps"] = False
-        try:
-            translate = self.boto_session.client(service_name="translate", region_name="ap-southeast-2", use_ssl=True)
-        except Exception as e:
-            print(str(e))
+        # try:
+        #     translate = self.boto_session.client(service_name="translate", region_name="ap-southeast-2", use_ssl=True)
+        # except Exception as e:
+        #     print(str(e))
 
-        with ThreadPoolExecutor() as executor:
+        print(f"Is transcribing: {self.transcribing}")
+        
+        with self.executor as executor:
             while self.transcribing:
                 try:
                     # asynchronous task, fetches the audio from audio_queue by 
                     # running it in a separate thread 
                     # await is used to return control to the event loop running on the main thread
+                    print("Transcription Loop Started . . .\n")
+                    
+
                     audio_data = await self.event_loop.run_in_executor(
-                        executor, functools.partial(self.audio_queue.get, timeout=3.0)
+                        executor, functools.partial(self.audio_queue.get, timeout=4.0)
                     )
                     
+                    print("Grabbing audio from audio_queue . . .\n")
+
                     # create a partial function to run the transcribe function from whisper
                     func = functools.partial(
                         self.whisper_model.transcribe,
@@ -89,40 +100,57 @@ class AudioTranscriber:
                         **transcribe_settings
                     )
                     
+
                     # get the transcribed segments from the partial function ran 
                     # inside a separate thread pool
-                    segments, _ = await self.event_loop.run_in_executor(executor, func)
+                    try:
+                        transcription_task = self.event_loop.run_in_executor(executor, func)
+                        segments, _ = await asyncio.wait_for(transcription_task, timeout=30)
+                        print("Transcription completed successfully!")
+                        print(f"Type of segments: {type(segments)}")
+                    except asyncio.TimeoutError:
+                        print("Transcription timed out after 30 seconds!")
+                        continue
+                    except Exception as e:
+                        print(f"Error during transcription: {str(e)}")
+                        print(f"Error type: {type(e)}")
+                        continue
+                    
+                    print("Waiting for Transcription . . .\n")
 
                     for segment in segments:
+                        print("\nTranscription Segments Found.")
                         # result = translate.translate_text(Text=segment.text, 
-                        # SourceLanguageCode="en", 
-                        # TargetLanguageCode="zh-TD")
+                        # SourceLanguageCode="zh", 
+                        # TargetLanguageCode="en")
+                        
+                        transcription_text = segment.text + " "
+                        # translation_text = result.get("TranslatedText") + " "
 
-                        transcription_text = segment.text
-                        # translation_text = result.get("TranslatedText")``
+                        eel.on_receive_message(transcription_text + " ")
 
-                        eel.on_receive_message(transcription_text)
-                        # eel.on_receive_message(translation_text)
+                        # print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
 
                         print(f"Transcription Text: '{transcription_text}'") 
                         # print(f"Translation Text: {translation_text}") 
 
-                        append_to_doc(self.creds, transcription_text)
+                        # append_to_doc(self.creds, transcription_text)
                         # append_to_doc(self.creds, translation_text)
                         
                         
                 # if queue is empty skip to next iteration in queue
                 except queue.Empty:
-                    continue
+                    print("audio queue is empty")
                 
                 # if other exceptions caught then print on console
                 except Exception as e:
                     print(str(e))
+
+
     
     # used for processing the final audio file after transcription stops
     def process_audio(self, audio_data: np.ndarray, frames: int, time, status):
         is_speech = self.vad.is_speech(audio_data)
-        
         # flatten(): turns a 2D array into a 1D array
         
         # if there is speech reset silence counter to 0 and append 
@@ -134,6 +162,7 @@ class AudioTranscriber:
         # otherwise increment silence counter and add flattened audio to 
         # data list only if we want to include
         else:
+            # print("silence")
             self.silence_counter += 1
             if self.app_options.include_non_speech:
                 self.all_audio_data_list.append(audio_data.flatten())
@@ -150,11 +179,21 @@ class AudioTranscriber:
             # short segments of audio data often contain transient noise
             # noise threshold can filter out these short segments
             if len(self.audio_data_list) > self.app_options.noise_threshold:
+                print("Creating audio file . . .\n")
+                self.save_audio_file(self.audio_data_list, "output.wav")
+                print("Adding audio data to the audio queue . . .")
                 concatenate_audio_data = np.concatenate(self.audio_data_list)
                 self.audio_data_list.clear()
                 self.audio_queue.put(concatenate_audio_data)
             else:
                 self.audio_data_list.clear()
+
+    def save_audio_file(self, audio_data_list, filename, samplerate=16000):
+        # Concatenate all audio data in the list
+        audio_data = np.concatenate(audio_data_list)
+    
+        # Save the concatenated audio data to a file
+        sf.write(filename, audio_data, samplerate)
 
     # used to start the live transcription
     async def start_transcription(self):
@@ -167,9 +206,13 @@ class AudioTranscriber:
             self._running.set()
             
             # send the transcribe function to run in a separate thread
-            self._transcribe_task = asyncio.run_coroutine_threadsafe(
-                self.transcribe_audio(), self.event_loop
-            )
+            try:
+
+                self._transcribe_task = asyncio.run_coroutine_threadsafe(
+                    self.transcribe_audio(), self.event_loop
+                )
+            except Exception as e:
+                print(str(e))
             print("Transcription started . . .")
             while self._running.is_set():
                 await asyncio.sleep(1)
@@ -194,6 +237,10 @@ class AudioTranscriber:
                 write_audio("audio", "voice", audio_data)
                 # self.batch_transcribe_audio(audio_data)
             
+            if hasattr(self, 'executor') and self.executor:
+                self.executor.shutdown(wait=False) 
+                print("ThreadPoolExecutor shut down.")
+
             # stop and close the stream
             if self.stream is not None:
                 self._running.clear()

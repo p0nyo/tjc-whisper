@@ -6,8 +6,6 @@ import eel
 from faster_whisper import WhisperModel
 from .audio_transcriber import AppOptions
 from .audio_transcriber import AudioTranscriber
-from .utils.audio_util import base64_to_audio
-from .utils.file_util import write_audio
 
 eel.init("web")
 
@@ -36,15 +34,16 @@ def start_transcription():
         # cpu, cuda, auto
         # cuda is gpu
         # need to download cuda if running it
-        filtered_model_settings = {'model_size_or_path': 'tiny', 
-                                   'device': 'cpu', 
+        filtered_model_settings = {'model_size_or_path': 'large-v2', 
+                                   'device': 'cuda', 
                                    'device_index': 0, 
                                    'compute_type': 'default', 
                                    'cpu_threads': 0, 
                                    'num_workers': 1, 
                                    'local_files_only': False}
-        filtered_transcribe_settings = {'language': 'en', 
+        filtered_transcribe_settings = {'language': 'zh', 
                                         'task': 'transcribe', 
+                                        'log_progress': True,
                                         'beam_size': 5, 
                                         'best_of': 5, 
                                         'patience': 1, 
@@ -114,6 +113,11 @@ def on_close(page, sockets):
     if transcriber and transcriber.transcribing:
         stop_transcription()
         print("Stopped transcription.")
+
+    if hasattr(transcriber, 'executor') and transcriber.executor:
+        transcriber.executor.shutdown(wait=False)
+        print("ThreadPoolExecutor shut down.")
+    
     sys.exit()
     
 if __name__ == "__main__":
