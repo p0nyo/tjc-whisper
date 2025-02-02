@@ -61,8 +61,8 @@ class AudioTranscriber:
         self._running = asyncio.Event()
         self._transcribe_task = None
         self.executor = ThreadPoolExecutor()
-        # self.creds = authenticate_user()
-        # self.boto_session = boto3.Session(profile_name="default")
+        self.creds = authenticate_user()
+        self.boto_session = boto3.Session(profile_name="default")
     
     # used for transcribing the audio
     async def transcribe_audio(self):
@@ -71,10 +71,10 @@ class AudioTranscriber:
         transcribe_settings = self.transcribe_settings.copy()
         transcribe_settings["without_timestamps"] = True
         transcribe_settings["word_timestamps"] = False
-        # try:
-        #     translate = self.boto_session.client(service_name="translate", region_name="ap-southeast-2", use_ssl=True)
-        # except Exception as e:
-        #     print(str(e))
+        try:
+            translate = self.boto_session.client(service_name="translate", region_name="ap-southeast-2", use_ssl=True)
+        except Exception as e:
+            print(str(e))
 
         print(f"Is transcribing: {self.transcribing}")
         
@@ -120,22 +120,22 @@ class AudioTranscriber:
 
                     for segment in segments:
                         print("\nTranscription Segments Found.")
-                        # result = translate.translate_text(Text=segment.text, 
-                        # SourceLanguageCode="zh", 
-                        # TargetLanguageCode="en")
+                        result = translate.translate_text(Text=segment.text, 
+                        SourceLanguageCode="zh", 
+                        TargetLanguageCode="en")
                         
                         transcription_text = segment.text + " "
-                        # translation_text = result.get("TranslatedText") + " "
+                        translation_text = result.get("TranslatedText") + " "
 
-                        eel.on_receive_message(transcription_text + " ")
+                        eel.on_receive_message(translation_text)
 
                         # print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
 
                         print(f"Transcription Text: '{transcription_text}'") 
-                        # print(f"Translation Text: {translation_text}") 
+                        print(f"Translation Text: {translation_text}") 
 
-                        # append_to_doc(self.creds, transcription_text)
-                        # append_to_doc(self.creds, translation_text)
+                        append_to_doc(self.creds, transcription_text)
+                        append_to_doc(self.creds, translation_text)
                         
                         
                 # if queue is empty skip to next iteration in queue
