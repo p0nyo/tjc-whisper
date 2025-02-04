@@ -50,3 +50,7 @@ h1 {
     padding: 8px;
     margin: 10px 5px;
 }
+
+.content {
+    flex: auto;
+}
