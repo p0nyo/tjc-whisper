@@ -29,6 +29,7 @@ class AppOptions(NamedTuple):
     silence_limit: int = 1
     noise_threshold: int = 5
     non_speech_threshold: float = 0.1
+    time_limit: int = 30
     include_non_speech: bool = False
     create_audio_file: bool = False
     use_websocket_server: bool = False
@@ -40,7 +41,8 @@ class AudioTranscriber:
         event_loop: asyncio.AbstractEventLoop,
         whisper_model: WhisperModel,
         transcribe_settings: dict,
-        app_options: AppOptions
+        app_options: AppOptions,
+
         # websocket_server: WebSocketServer
         # openai_api: OpenAIAPI,
     ):
@@ -53,6 +55,8 @@ class AudioTranscriber:
         # self.openai_api = openai_api
         self.vad = Vad(app_options.non_speech_threshold)
         self.silence_counter: int = 0
+        self.time_counter = 0
+        self.time_limit = app_options.time_limit
         self.audio_data_list = []
         self.all_audio_data_list = []
         self.audio_queue = queue.Queue()
@@ -76,7 +80,7 @@ class AudioTranscriber:
         except Exception as e:
             print(str(e))
 
-        print(f"Is transcribing: {self.transcribing}")
+        print(f"Is transcribing: {self.transcribing} with a time limit of {self.time_limit}")
         
         with self.executor as executor:
             while self.transcribing:
@@ -152,7 +156,8 @@ class AudioTranscriber:
     def process_audio(self, audio_data: np.ndarray, frames: int, time, status):
         is_speech = self.vad.is_speech(audio_data)
         # flatten(): turns a 2D array into a 1D array
-        
+        print(self.time_counter)
+        self.time_counter += 1
         # if there is speech reset silence counter to 0 and append 
         # flattened audio to data list
         if is_speech:
@@ -169,8 +174,9 @@ class AudioTranscriber:
         
         # handles prolonged silence, if silence counter reaches the limit
         # the silence counter is reset to 0
-        if not is_speech and self.silence_counter > self.app_options.silence_limit:
+        if (not is_speech and self.silence_counter > self.app_options.silence_limit) or (self.time_counter >= self.time_limit):
             self.silence_counter = 0
+            self.time_counter = 0
         
             # creates audio file if option enabled
             if self.app_options.create_audio_file:
