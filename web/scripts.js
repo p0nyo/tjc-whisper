@@ -14,17 +14,11 @@ function stopTranscription() {
 function addText(message) {
   const transArea = document.getElementById("transcription");
 
-  let lastChild = transArea.lastElementChild;
-
-  if (lastChild && lastChild.classList.contains("transcript-container")) {
-    lastChild.textContent += " " + message;
-  } else {
-    const newel = document.createElement("div");
-    newel.classList.add("transcript-container");
-    newel.textContent = message;
-    
-    transArea.appendChild(newel);
-  }
+  const newel = document.createElement("div");
+  newel.classList.add("transcript-container");
+  newel.textContent = message;
+  
+  transArea.appendChild(newel);
 
   // Makes sure the message box scrolls as new messages come in
   transArea.scrollTop = transArea.scrollHeight;

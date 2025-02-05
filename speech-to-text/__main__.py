@@ -19,7 +19,7 @@ def start_transcription():
     try:
         filtered_app_settings = {'audio_device': 0, 
                                  'silence_limit': 1, 
-                                 'noise_threshold': 9, 
+                                 'noise_threshold': 8, 
                                  'non_speech_threshold': 0.1, 
                                  'include_non_speech': False, 
                                  'create_audio_file': False, 

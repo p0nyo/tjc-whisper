@@ -105,7 +105,7 @@ class AudioTranscriber:
                     # inside a separate thread pool
                     try:
                         transcription_task = self.event_loop.run_in_executor(executor, func)
-                        segments, _ = await asyncio.wait_for(transcription_task, timeout=30)
+                        segments, _ = await asyncio.wait_for(transcription_task, timeout=4)
                         print("Transcription completed successfully!")
                         print(f"Type of segments: {type(segments)}")
                     except asyncio.TimeoutError:
@@ -127,7 +127,7 @@ class AudioTranscriber:
                         transcription_text = segment.text + " "
                         translation_text = result.get("TranslatedText") + " "
 
-                        eel.on_receive_message(translation_text)
+                        eel.on_receive_message(translation_text + " " + transcription_text)
 
                         # print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
 
