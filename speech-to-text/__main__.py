@@ -21,7 +21,7 @@ def start_transcription():
                                  'silence_limit': 1, 
                                  'noise_threshold': 8, 
                                  'non_speech_threshold': 0.1, 
-                                 'time_limit': 150,
+                                 'time_limit': 8,
                                  # callback function is triggered every 32 milliseconds
                                  # if we want a time limit of roughly 1 second (1000 millisecond),
                                  # then time_limit = 31 (992 milliseconds), can use 30 for ease

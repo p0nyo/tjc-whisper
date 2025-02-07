@@ -56,7 +56,7 @@ class AudioTranscriber:
         self.vad = Vad(app_options.non_speech_threshold)
         self.silence_counter: int = 0
         self.time_counter = 0
-        self.time_limit = app_options.time_limit
+        self.time_limit = app_options.time_limit/30
         self.audio_data_list = []
         self.all_audio_data_list = []
         self.audio_queue = queue.Queue()
