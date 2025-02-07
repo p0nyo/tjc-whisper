@@ -138,7 +138,7 @@ class AudioTranscriber:
                         print(f"Transcription Text: '{transcription_text}'") 
                         print(f"Translation Text: {translation_text}") 
 
-                        append_to_doc(self.creds, transcription_text)
+                        # append_to_doc(self.creds, transcription_text)
                         append_to_doc(self.creds, translation_text)
                         
                         
@@ -259,6 +259,23 @@ class AudioTranscriber:
                  
         except Exception as e:
             print(str(e))
+
+
+def test_api_keys():
+    try:
+        # check to see if google docs API credentials are valid
+        append_to_doc(authenticate_user(), "")
+    except Exception as e:
+        print(str(e))
+
+    try:
+        translate = boto3.Session(profile_name="default")(service_name="translate", region_name="ap-southeast-2", use_ssl=True)
+        # check to see if aws API credentials are valid
+        test = translate.translate_text(Text="the", 
+                    SourceLanguageCode="en", 
+                    TargetLanguageCode="en")
+    except Exception as e:
+        print(str(e))
 
 
 def authenticate_user():

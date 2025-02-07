@@ -6,6 +6,7 @@ import eel
 from faster_whisper import WhisperModel
 from .audio_transcriber import AppOptions
 from .audio_transcriber import AudioTranscriber
+from .audio_transcriber import test_api_keys
 
 eel.init("web")
 
@@ -127,4 +128,5 @@ def on_close(page, sockets):
     
 if __name__ == "__main__":
     print("hello world")
+    test_api_keys()
     eel.start("index.html", size=(1024, 900), close_callback=on_close)
