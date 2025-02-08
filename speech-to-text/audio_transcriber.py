@@ -56,7 +56,7 @@ class AudioTranscriber:
         self.vad = Vad(app_options.non_speech_threshold)
         self.silence_counter: int = 0
         self.time_counter = 0
-        self.time_limit = app_options.time_limit/30
+        self.time_limit = app_options.time_limit * 30
         self.audio_data_list = []
         self.all_audio_data_list = []
         self.audio_queue = queue.Queue()
@@ -131,7 +131,7 @@ class AudioTranscriber:
                         transcription_text = segment.text + " "
                         translation_text = result.get("TranslatedText") + " "
 
-                        eel.on_receive_message(translation_text + " " + transcription_text)
+                        eel.on_receive_message(transcription_text + " " + translation_text)
 
                         # print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
 
@@ -156,7 +156,7 @@ class AudioTranscriber:
     def process_audio(self, audio_data: np.ndarray, frames: int, time, status):
         is_speech = self.vad.is_speech(audio_data)
         # flatten(): turns a 2D array into a 1D array
-        print(self.time_counter)
+        # print(self.time_counter)
         self.time_counter += 1
         # if there is speech reset silence counter to 0 and append 
         # flattened audio to data list
@@ -264,7 +264,7 @@ class AudioTranscriber:
 def test_api_keys():
     try:
         # check to see if google docs API credentials are valid
-        append_to_doc(authenticate_user(), "")
+        append_to_doc(authenticate_user(), " ")
     except Exception as e:
         print(str(e))
 

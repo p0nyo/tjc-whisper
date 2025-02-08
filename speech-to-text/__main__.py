@@ -19,10 +19,10 @@ def start_transcription():
     global transcriber, event_loop, thread
     try:
         filtered_app_settings = {'audio_device': 0, 
-                                 'silence_limit': 1, 
+                                 'silence_limit': 0, 
                                  'noise_threshold': 8, 
                                  'non_speech_threshold': 0.1, 
-                                 'time_limit': 8,
+                                 'time_limit': 12,
                                  # callback function is triggered every 32 milliseconds
                                  # if we want a time limit of roughly 1 second (1000 millisecond),
                                  # then time_limit = 31 (992 milliseconds), can use 30 for ease
