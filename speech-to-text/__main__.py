@@ -22,7 +22,7 @@ def start_transcription():
                                  'silence_limit': 0, 
                                  'noise_threshold': 8, 
                                  'non_speech_threshold': 0.1, 
-                                 'time_limit': 12,
+                                 'time_limit': 2,
                                  # callback function is triggered every 32 milliseconds
                                  # if we want a time limit of roughly 1 second (1000 millisecond),
                                  # then time_limit = 31 (992 milliseconds), can use 30 for ease
@@ -115,18 +115,21 @@ def stop_transcription():
     
 def on_close(page, sockets):
     print(page, "was closed")
-
     if transcriber and transcriber.transcribing:
         stop_transcription()
         print("Stopped transcription.")
-
     if hasattr(transcriber, 'executor') and transcriber.executor:
         transcriber.executor.shutdown(wait=False)
         print("ThreadPoolExecutor shut down.")
-    
+
     sys.exit()
     
 if __name__ == "__main__":
-    print("hello world")
-    test_api_keys()
-    eel.start("index.html", size=(1024, 900), close_callback=on_close)
+    print("Opening Client . . .\n")
+    try:
+        test_api_keys()
+        print("Success: Client Opened.\n")
+        eel.start("index.html", size=(1024, 900), close_callback=on_close)
+    except Exception as e:
+        print(str(e))
+        print("\nFailure: Client Closed.")

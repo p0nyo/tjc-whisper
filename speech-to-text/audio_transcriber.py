@@ -70,8 +70,6 @@ class AudioTranscriber:
     
     # used for transcribing the audio
     async def transcribe_audio(self):
-        print("Function Started . . .")
-
         transcribe_settings = self.transcribe_settings.copy()
         transcribe_settings["without_timestamps"] = True
         transcribe_settings["word_timestamps"] = False
@@ -79,23 +77,19 @@ class AudioTranscriber:
             translate = self.boto_session.client(service_name="translate", region_name="ap-southeast-2", use_ssl=True)
         except Exception as e:
             print(str(e))
-
-        print(f"Is transcribing: {self.transcribing} with a time limit of {self.time_limit}")
         
         with self.executor as executor:
             while self.transcribing:
                 try:
+                    print(f"{'-'*80}")
                     # asynchronous task, fetches the audio from audio_queue by 
                     # running it in a separate thread 
                     # await is used to return control to the event loop running on the main thread
-                    print("Transcription Loop Started . . .\n")
-                    
-
                     audio_data = await self.event_loop.run_in_executor(
                         executor, functools.partial(self.audio_queue.get, timeout=4.0)
                     )
                     
-                    print("Grabbing audio from audio_queue . . .\n")
+                    print("Pending: Grabbing audio data from audio queue . . .\n")
 
                     # create a partial function to run the transcribe function from whisper
                     func = functools.partial(
@@ -110,20 +104,13 @@ class AudioTranscriber:
                     try:
                         transcription_task = self.event_loop.run_in_executor(executor, func)
                         segments, _ = await asyncio.wait_for(transcription_task, timeout=4)
-                        print("Transcription completed successfully!")
-                        print(f"Type of segments: {type(segments)}")
-                    except asyncio.TimeoutError:
-                        print("Transcription timed out after 30 seconds!")
-                        continue
+                        print("Success: Transcription Task Completed.")
                     except Exception as e:
-                        print(f"Error during transcription: {str(e)}")
-                        print(f"Error type: {type(e)}")
+                        print(f"Failure: {str(e)}")
                         continue
-                    
-                    print("Waiting for Transcription . . .\n")
 
                     for segment in segments:
-                        print("\nTranscription Segments Found.")
+                        print("\nSuccess: Transcription Segments Found.\n")
                         result = translate.translate_text(Text=segment.text, 
                         SourceLanguageCode="zh", 
                         TargetLanguageCode="en")
@@ -136,15 +123,16 @@ class AudioTranscriber:
                         # print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
 
                         print(f"Transcription Text: '{transcription_text}'") 
-                        print(f"Translation Text: {translation_text}") 
+                        print(f"Translation Text: {translation_text}\n") 
 
                         # append_to_doc(self.creds, transcription_text)
-                        append_to_doc(self.creds, translation_text)
+                        document_id = append_to_doc(self.creds, translation_text)
+                        print(f"Success: Appended to Google Doc ID: '{document_id}'.")
                         
                         
                 # if queue is empty skip to next iteration in queue
                 except queue.Empty:
-                    print("audio queue is empty")
+                    print("Failure: Audio Queue is empty")
                 
                 # if other exceptions caught then print on console
                 except Exception as e:
@@ -185,9 +173,8 @@ class AudioTranscriber:
             # short segments of audio data often contain transient noise
             # noise threshold can filter out these short segments
             if len(self.audio_data_list) > self.app_options.noise_threshold:
-                print("Creating audio file . . .\n")
-                self.save_audio_file(self.audio_data_list, "output.wav")
-                print("Adding audio data to the audio queue . . .")
+                # self.save_audio_file(self.audio_data_list, "output.wav")
+                print("Pending: Adding audio data to the audio queue . . .")
                 concatenate_audio_data = np.concatenate(self.audio_data_list)
                 self.audio_data_list.clear()
                 self.audio_queue.put(concatenate_audio_data)
@@ -213,13 +200,12 @@ class AudioTranscriber:
             
             # send the transcribe function to run in a separate thread
             try:
-
                 self._transcribe_task = asyncio.run_coroutine_threadsafe(
                     self.transcribe_audio(), self.event_loop
                 )
             except Exception as e:
                 print(str(e))
-            print("Transcription started . . .")
+            print(f"Transcription started with a time limit of {self.time_limit/30} seconds . . .")
             while self._running.is_set():
                 await asyncio.sleep(1)
         
@@ -265,17 +251,23 @@ def test_api_keys():
     try:
         # check to see if google docs API credentials are valid
         append_to_doc(authenticate_user(), " ")
+        print("Success: Google Docs API Credentials Verified.")
     except Exception as e:
-        print(str(e))
+        error_message = str(e)
+        raise Exception(error_message)
 
     try:
-        translate = boto3.Session(profile_name="default")(service_name="translate", region_name="ap-southeast-2", use_ssl=True)
+        boto_session = boto3.Session(profile_name="default")
+        translate = boto_session.client(service_name="translate", region_name="ap-southeast-2", use_ssl=True)
         # check to see if aws API credentials are valid
         test = translate.translate_text(Text="the", 
                     SourceLanguageCode="en", 
                     TargetLanguageCode="en")
+        translate_test = test.get("TranslatedText")
+        print("Success: AWS Translate API Credentials Verified.")
     except Exception as e:
-        print(str(e))
+        error_message = str(e)
+        raise Exception(error_message + " (Run 'aws configure sso')")
 
 
 def authenticate_user():
@@ -323,7 +315,7 @@ def append_to_doc(creds, text):
 
         service.documents().batchUpdate(documentId=document_id, body={'requests': requests}).execute()
 
-        print(f"Success! Appended to Google Doc ID: '{document_id}'")
+        return document_id
     except errors.HttpError as error:
         # The API encountered a problem.
         print(error.content)
