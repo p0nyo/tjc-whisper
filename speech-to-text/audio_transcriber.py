@@ -67,6 +67,7 @@ class AudioTranscriber:
         self.executor = ThreadPoolExecutor()
         self.creds = authenticate_user()
         self.boto_session = boto3.Session(profile_name="default")
+        self.context_queue = ""
     
     # used for transcribing the audio
     async def transcribe_audio(self):
@@ -110,12 +111,15 @@ class AudioTranscriber:
                         continue
 
                     for segment in segments:
+                        print(f"Context Queue Status: {'Available' if len(self.context_queue) == 0 else 'Empty'}")
+                        self.context_queue += segment.text
+                        
                         print("\nSuccess: Transcription Segments Found.\n")
-                        result = translate.translate_text(Text=segment.text, 
+                        result = translate.translate_text(Text=self.context_queue, 
                         SourceLanguageCode="zh", 
                         TargetLanguageCode="en")
                         
-                        transcription_text = segment.text + " "
+                        transcription_text = self.context_queue + " "
                         translation_text = result.get("TranslatedText") + " "
 
                         eel.on_receive_message(transcription_text + " " + translation_text)
@@ -137,8 +141,6 @@ class AudioTranscriber:
                 # if other exceptions caught then print on console
                 except Exception as e:
                     print(str(e))
-
-
     
     # used for processing the final audio file after transcription stops
     def process_audio(self, audio_data: np.ndarray, frames: int, time, status):
@@ -160,10 +162,19 @@ class AudioTranscriber:
             if self.app_options.include_non_speech:
                 self.all_audio_data_list.append(audio_data.flatten())
         
-        # handles prolonged silence, if silence counter reaches the limit
-        # the silence counter is reset to 0
+
+
+
+
+        # based on self.time_limit, the time_counter increments until it hits the limit
+        # automatically dumping whatever is on the audio data list to the audio queue
+        # where it is sent to
         if (not is_speech and self.silence_counter > self.app_options.silence_limit) or (self.time_counter >= self.time_limit):
-            self.silence_counter = 0
+            # handles prolonged silence, if silence counter reaches the limit
+            # the silence counter is reset to 0
+            if (not is_speech and self.silence_counter > self.app_options.silence_limit):
+                self.silence_counter = 0
+                self.context_queue = ""
             self.time_counter = 0
         
             # creates audio file if option enabled
@@ -246,7 +257,6 @@ class AudioTranscriber:
         except Exception as e:
             print(str(e))
 
-
 def test_api_keys():
     try:
         # check to see if google docs API credentials are valid
@@ -268,7 +278,6 @@ def test_api_keys():
     except Exception as e:
         error_message = str(e)
         raise Exception(error_message + " (Run 'aws configure sso')")
-
 
 def authenticate_user():
     """Calls the Apps Script API."""
