@@ -57,6 +57,10 @@ class AudioTranscriber:
         self.silence_counter: int = 0
         self.time_counter = 0
         self.time_limit = app_options.time_limit * 30
+        # callback function is triggered every 32 milliseconds
+        # if we want a time limit of roughly 1 second (1000 millisecond),
+        # then time_limit = 31 (992 milliseconds), can use 30 for ease
+        # time_limit conversion rate: 30 = 1 second
         self.audio_data_list = []
         self.all_audio_data_list = []
         self.audio_queue = queue.Queue()
@@ -67,7 +71,6 @@ class AudioTranscriber:
         self.executor = ThreadPoolExecutor()
         self.creds = authenticate_user()
         self.boto_session = boto3.Session(profile_name="default")
-        self.context_queue = ""
     
     # used for transcribing the audio
     async def transcribe_audio(self):
@@ -111,27 +114,22 @@ class AudioTranscriber:
                         continue
 
                     for segment in segments:
-                        print(f"Context Queue Status: {'Available' if len(self.context_queue) == 0 else 'Empty'}")
-                        self.context_queue += segment.text
-                        
                         print("\nSuccess: Transcription Segments Found.\n")
-                        result = translate.translate_text(Text=self.context_queue, 
-                        SourceLanguageCode="zh", 
-                        TargetLanguageCode="en")
-                        
-                        transcription_text = self.context_queue + " "
-                        translation_text = result.get("TranslatedText") + " "
 
-                        eel.on_receive_message(transcription_text + " " + translation_text)
-
-                        # print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
-
+                        transcription_text = segment.text + " "
                         print(f"Transcription Text: '{transcription_text}'") 
-                        print(f"Translation Text: {translation_text}\n") 
+                        eel.on_receive_message(transcription_text)
 
-                        # append_to_doc(self.creds, transcription_text)
-                        document_id = append_to_doc(self.creds, translation_text)
-                        print(f"Success: Appended to Google Doc ID: '{document_id}'.")
+                        # result = translate.translate_text(Text=segment.text, 
+                        # SourceLanguageCode="zh", 
+                        # TargetLanguageCode="en")
+
+                        # translation_text = result.get("TranslatedText") + " "
+                        # eel.on_receive_message(transcription_text + " " + translation_text)
+                        # print(f"Translation Text: {translation_text}\n") 
+
+                        # document_id = append_to_doc(self.creds, translation_text)
+                        # print(f"Success: Appended to Google Doc ID: '{document_id}'.")
                         
                         
                 # if queue is empty skip to next iteration in queue
@@ -161,10 +159,6 @@ class AudioTranscriber:
             self.silence_counter += 1
             if self.app_options.include_non_speech:
                 self.all_audio_data_list.append(audio_data.flatten())
-        
-
-
-
 
         # based on self.time_limit, the time_counter increments until it hits the limit
         # automatically dumping whatever is on the audio data list to the audio queue
@@ -172,9 +166,7 @@ class AudioTranscriber:
         if (not is_speech and self.silence_counter > self.app_options.silence_limit) or (self.time_counter >= self.time_limit):
             # handles prolonged silence, if silence counter reaches the limit
             # the silence counter is reset to 0
-            if (not is_speech and self.silence_counter > self.app_options.silence_limit):
-                self.silence_counter = 0
-                self.context_queue = ""
+            self.silence_counter = 0
             self.time_counter = 0
         
             # creates audio file if option enabled
@@ -186,10 +178,15 @@ class AudioTranscriber:
             if len(self.audio_data_list) > self.app_options.noise_threshold:
                 # self.save_audio_file(self.audio_data_list, "output.wav")
                 print("Pending: Adding audio data to the audio queue . . .")
-                concatenate_audio_data = np.concatenate(self.audio_data_list)
+                self.all_audio_data_list += self.audio_data_list
+                concatenate_audio_data = np.concatenate(self.all_audio_data_list)
                 self.audio_data_list.clear()
                 self.audio_queue.put(concatenate_audio_data)
+                if not is_speech and self.silence_counter > self.app_options.silence_limit:
+                    print("Success: Audio Data List Cleared")
+                    self.all_audio_data_list.clear()
             else:
+                print("Success: Temp Audio Data List Cleared")
                 self.audio_data_list.clear()
 
     def save_audio_file(self, audio_data_list, filename, samplerate=16000):
