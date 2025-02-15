@@ -30,6 +30,7 @@ class AppOptions(NamedTuple):
     noise_threshold: int = 5
     non_speech_threshold: float = 0.1
     time_limit: int = 30
+    whisper_time_limit: int = 30
     include_non_speech: bool = False
     create_audio_file: bool = False
     use_websocket_server: bool = False
@@ -56,7 +57,9 @@ class AudioTranscriber:
         self.vad = Vad(app_options.non_speech_threshold)
         self.silence_counter: int = 0
         self.time_counter = 0
+        self.whisper_time_counter = 0
         self.time_limit = app_options.time_limit * 30
+        self.whisper_time_limit = app_options.whisper_time_limit * 30
         # callback function is triggered every 32 milliseconds
         # if we want a time limit of roughly 1 second (1000 millisecond),
         # then time_limit = 31 (992 milliseconds), can use 30 for ease
@@ -118,20 +121,25 @@ class AudioTranscriber:
 
                         transcription_text = segment.text + " "
                         print(f"Transcription Text: '{transcription_text}'") 
-                        eel.on_receive_message(transcription_text)
+                        # eel.on_receive_message(transcription_text)
 
-                        # result = translate.translate_text(Text=segment.text, 
-                        # SourceLanguageCode="zh", 
-                        # TargetLanguageCode="en")
+                        transcription_word_list = transcription_text.split()
+                        print(transcription_word_list)
 
-                        # translation_text = result.get("TranslatedText") + " "
-                        # eel.on_receive_message(transcription_text + " " + translation_text)
-                        # print(f"Translation Text: {translation_text}\n") 
+                        result = translate.translate_text(Text=segment.text, 
+                        SourceLanguageCode="zh", 
+                        TargetLanguageCode="en")
 
-                        # document_id = append_to_doc(self.creds, translation_text)
-                        # print(f"Success: Appended to Google Doc ID: '{document_id}'.")
+                        translation_text = result.get("TranslatedText") + " "
+                        eel.on_receive_message(transcription_text + " " + translation_text)
+                        print(f"Translation Text: {translation_text}\n") 
+
+                        document_id = append_to_doc(self.creds, translation_text)
+                        print(f"Success: Appended to Google Doc ID: '{document_id}'.")
                         
-                        
+                        translation_word_list = translation_text.split()
+                        print(translation_word_list)
+
                 # if queue is empty skip to next iteration in queue
                 except queue.Empty:
                     print("Failure: Audio Queue is empty")
@@ -144,8 +152,9 @@ class AudioTranscriber:
     def process_audio(self, audio_data: np.ndarray, frames: int, time, status):
         is_speech = self.vad.is_speech(audio_data)
         # flatten(): turns a 2D array into a 1D array
-        # print(self.time_counter)
+        print(self.whisper_time_counter)
         self.time_counter += 1
+        self.whisper_time_counter += 1 
         # if there is speech reset silence counter to 0 and append 
         # flattened audio to data list
         if is_speech:
@@ -155,10 +164,8 @@ class AudioTranscriber:
         # otherwise increment silence counter and add flattened audio to 
         # data list only if we want to include
         else:
-            # print("silence")
+            print("silence")
             self.silence_counter += 1
-            if self.app_options.include_non_speech:
-                self.all_audio_data_list.append(audio_data.flatten())
 
         # based on self.time_limit, the time_counter increments until it hits the limit
         # automatically dumping whatever is on the audio data list to the audio queue
@@ -166,28 +173,30 @@ class AudioTranscriber:
         if (not is_speech and self.silence_counter > self.app_options.silence_limit) or (self.time_counter >= self.time_limit):
             # handles prolonged silence, if silence counter reaches the limit
             # the silence counter is reset to 0
+
+            if (self.silence_counter > self.app_options.silence_limit) or (self.whisper_time_counter > self.whisper_time_limit):
+                self.whisper_time_counter = 0
+                self.all_audio_data_list.clear()
+
             self.silence_counter = 0
             self.time_counter = 0
-        
+            # self.silence_counter += 1
             # creates audio file if option enabled
-            if self.app_options.create_audio_file:
-                self.all_audio_data_list.extend(self.audio_data_list)
+            # if self.app_options.create_audio_file:
+            #     self.all_audio_data_list.extend(self.audio_data_list)
                 
             # short segments of audio data often contain transient noise
             # noise threshold can filter out these short segments
             if len(self.audio_data_list) > self.app_options.noise_threshold:
                 # self.save_audio_file(self.audio_data_list, "output.wav")
                 print("Pending: Adding audio data to the audio queue . . .")
-                self.all_audio_data_list += self.audio_data_list
+                self.all_audio_data_list.extend(self.audio_data_list)
                 concatenate_audio_data = np.concatenate(self.all_audio_data_list)
                 self.audio_data_list.clear()
                 self.audio_queue.put(concatenate_audio_data)
-                if not is_speech and self.silence_counter > self.app_options.silence_limit:
-                    print("Success: Audio Data List Cleared")
-                    self.all_audio_data_list.clear()
             else:
-                print("Success: Temp Audio Data List Cleared")
                 self.audio_data_list.clear()
+
 
     def save_audio_file(self, audio_data_list, filename, samplerate=16000):
         # Concatenate all audio data in the list

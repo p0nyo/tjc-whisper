@@ -15,10 +15,14 @@ function addText(message) {
   const transArea = document.getElementById("transcription");
 
   const newel = document.createElement("div");
+  const blank = document.createElement("div");
   newel.classList.add("transcript-container");
+  blank.classList.add("transcript-container");
   newel.textContent = message;
+  blank.style.height = "10px";
   
   transArea.appendChild(newel);
+  transArea.appendChild(blank);
 
   // Makes sure the message box scrolls as new messages come in
   transArea.scrollTop = transArea.scrollHeight;

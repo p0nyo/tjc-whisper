@@ -22,8 +22,8 @@ def start_transcription():
                                  'silence_limit': 0, 
                                  'noise_threshold': 8, 
                                  'non_speech_threshold': 0.1, 
-                                 'time_limit': 2,
-
+                                 'time_limit': 3,
+                                 'whisper_time_limit': 30,
                                  'include_non_speech': False, 
                                  'create_audio_file': False, 
                                  'use_websocket_server': False, 
@@ -37,14 +37,14 @@ def start_transcription():
         # cpu, cuda, auto
         # cuda is gpu
         # need to download cuda if running it
-        filtered_model_settings = {'model_size_or_path': 'tiny', 
-                                   'device': 'cpu', 
+        filtered_model_settings = {'model_size_or_path': 'large-v2', 
+                                   'device': 'cuda', 
                                    'device_index': 0, 
                                    'compute_type': 'default', 
                                    'cpu_threads': 0, 
                                    'num_workers': 1, 
                                    'local_files_only': False}
-        filtered_transcribe_settings = {'language': 'en', 
+        filtered_transcribe_settings = {'language': 'zh', 
                                         'task': 'transcribe', 
                                         'log_progress': True,
                                         'beam_size': 5, 
