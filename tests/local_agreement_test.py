@@ -1,60 +1,51 @@
-import time
-from collections import Counter
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from speech_to_text.local_agreement import LocalAgreement
 
-# Example: Simulated real-time transcriptions from multiple models
-# Each item represents a chunk of transcription received in real-time
-real_time_transcriptions = [
-    "The quick brown fox",
-    "The quick brown fox jumped over",
-    "The quick brown fox jumped over the lazy dog",
-    "The quick brown fox jumped over the lazy dog while a bright blue butterfly flew by",
-    "The quick brown fox jumped over the lazy dog while a bright blue butterfly fluttered past",
-    "The quick brown fox jumped over the lazy dog while a bright blue butterfly fluttered past. Nearby, a group of children were playing soccer."
-]
+def print_transcription_details(index, transcription, result, agreement):
+    print(f"\n=== Transcription {index} ===")
+    print(f"Input: '{transcription}'")
+    print(f"Newly confirmed words: '{result}'")
+    print(f"Last confirmed index: {agreement.last_confirmed_position}")
+    print(f"Words at confirmed positions: {transcription.split()[:agreement.last_confirmed_position + 1]}")
+    print("-" * 50)
 
-# A simple function to apply local agreement in real-time
-def real_time_local_agreement(new_transcription, previous_transcriptions):
-    """
-    Applies local agreement algorithm to reconcile new transcription with previous transcriptions.
-    We assume that each transcription chunk is a sentence or a portion of it.
-    """
-    # Combine the new transcription with previous ones
-    all_transcriptions = previous_transcriptions + [new_transcription]
-    
-    # Split transcriptions into words (tokenize)
-    tokenized_transcriptions = [t.split() for t in all_transcriptions]
+agreement = LocalAgreement()
 
-    # Initialize the final transcription (list of words)
-    final_transcription = []
+# First transcription
+result = agreement.process_transcription("The way the way forw")
+print_transcription_details(1, "The way the way forw", result, agreement)
 
-    # For each word position, perform majority vote or consensus
-    max_length = max(len(t) for t in tokenized_transcriptions)
-    for i in range(max_length):
-        words_at_i = [t[i] for t in tokenized_transcriptions if i < len(t)]  # Avoid index out of range
+# Second transcription
+result = agreement.process_transcription("The way the way forward is clear")
+print_transcription_details(2, "The way the way forward is clear", result, agreement)
 
-        # If there are multiple words (disagreement), apply majority vote
-        word_count = Counter(words_at_i)
-        most_common_word = word_count.most_common(1)[0][0]
+# Third transcription
+result = agreement.process_transcription("A way way forward is clear and the way is long")
+print_transcription_details(3, "A way way forward is clear and the way is long", result, agreement)
 
-        # Add the agreed word to final transcription
-        final_transcription.append(most_common_word)
+# Fourth transcription
+result = agreement.process_transcription("A way the way forward is clear and the way is long for me too die")
+print_transcription_details(4, "A way the way forward is clear and the way is long for me too die", result, agreement)
 
-    # Join the final transcription into a single string
-    return " ".join(final_transcription)
+# Fifth transcription
+result = agreement.process_transcription("A way the way forward is clear and the way is long for me too die meow")
+print_transcription_details(5, "A way the way forward is clear and the way is long for me too die meow", result, agreement)
 
-# Real-time simulation: Process each transcription chunk
-previous_transcriptions = []
+# Sixth transcription
+result = agreement.process_transcription("A way the way forward is clear and the way is long for me too die meow TEST PASSED")
+print_transcription_details(6, "A way the way forward is clear and the way is long for me too die meow TEST PASSED", result, agreement)
 
-for transcription in real_time_transcriptions:
-    # Apply local agreement on each new chunk of transcription
-    final_transcription = real_time_local_agreement(transcription, previous_transcriptions)
+transcription_split = agreement.transcription_history[-1].split()
+last_word = len(agreement.transcription_history[-1])
+print(transcription_split)
+final_unconfirmed_words = transcription_split[agreement.last_confirmed_position+1:last_word]
 
-    # Output the agreed transcription in real-time (after processing each chunk)
-    print(f"Updated Transcription: {final_transcription}")
+print(' '.join(final_unconfirmed_words))
 
-    # Append the current transcription to the list of previous transcriptions
-    previous_transcriptions.append(transcription)
-
-    # Simulate delay to represent real-time processing (e.g., waiting for new audio)
-    time.sleep(1)  # Adjust the sleep time based on your real-time streaming
+print(agreement.process_transcription("Technology has revolutionized the way we live."))
+print(agreement.process_transcription("Technology has revolutionized the way we live and work, transforming industries, economies, and societies in profound ways."))
+print(agreement.process_transcription("Technology has revolutionized the way we live and work, transforming industries, economies, and societies in profound ways, from artificial intelligence and machine learning."))
+print(agreement.process_transcription("Technology has revolutionized the way we live and work, transforming industries, economies, and societies in profound ways, from artificial intelligence and machine learning to advanced robotics and automation."))
 

@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .vad import Vad
 from .utils.audio_util import create_audio_stream
 from .utils.file_util import write_audio
+from .local_agreement import LocalAgreement
 
 import os.path
 
@@ -72,6 +73,7 @@ class AudioTranscriber:
         self._running = asyncio.Event()
         self._transcribe_task = None
         self.executor = ThreadPoolExecutor()
+        self.local_agreement = LocalAgreement(history_size=5)
         self.creds = authenticate_user()
         self.boto_session = boto3.Session(profile_name="default")
     
@@ -120,25 +122,28 @@ class AudioTranscriber:
                         print("\nSuccess: Transcription Segments Found.\n")
 
                         transcription_text = segment.text + " "
-                        print(f"Transcription Text: '{transcription_text}'") 
-                        # eel.on_receive_message(transcription_text)
 
                         transcription_word_list = transcription_text.split()
-                        print(transcription_word_list)
 
-                        result = translate.translate_text(Text=segment.text, 
-                        SourceLanguageCode="zh", 
-                        TargetLanguageCode="en")
-
-                        translation_text = result.get("TranslatedText") + " "
-                        eel.on_receive_message(transcription_text + " " + translation_text)
-                        print(f"Translation Text: {translation_text}\n") 
-
-                        document_id = append_to_doc(self.creds, translation_text)
-                        print(f"Success: Appended to Google Doc ID: '{document_id}'.")
+                        confirmed_words = self.local_agreement.process_transcription(transcription_text)
                         
-                        translation_word_list = translation_text.split()
-                        print(translation_word_list)
+                        print(f"Transcription Text: '{transcription_text}'\n") 
+                        print(f"Confirmed Text: '{confirmed_words}'") 
+                        eel.on_receive_message(f"{transcription_text} *** {confirmed_words}")
+
+                        # result = translate.translate_text(Text=segment.text, 
+                        # SourceLanguageCode="zh", 
+                        # TargetLanguageCode="en")
+
+                        # translation_text = result.get("TranslatedText") + " "
+                        # eel.on_receive_message(transcription_text + " " + translation_text)
+                        # print(f"Translation Text: {translation_text}\n") 
+
+                        # document_id = append_to_doc(self.creds, translation_text)
+                        # print(f"Success: Appended to Google Doc ID: '{document_id}'.")
+                        
+                        # translation_word_list = translation_text.split()
+                        # print(translation_word_list)
 
                 # if queue is empty skip to next iteration in queue
                 except queue.Empty:
@@ -152,7 +157,6 @@ class AudioTranscriber:
     def process_audio(self, audio_data: np.ndarray, frames: int, time, status):
         is_speech = self.vad.is_speech(audio_data)
         # flatten(): turns a 2D array into a 1D array
-        print(self.whisper_time_counter)
         self.time_counter += 1
         self.whisper_time_counter += 1 
         # if there is speech reset silence counter to 0 and append 
@@ -164,7 +168,6 @@ class AudioTranscriber:
         # otherwise increment silence counter and add flattened audio to 
         # data list only if we want to include
         else:
-            print("silence")
             self.silence_counter += 1
 
         # based on self.time_limit, the time_counter increments until it hits the limit
@@ -177,6 +180,7 @@ class AudioTranscriber:
             if (self.silence_counter > self.app_options.silence_limit) or (self.whisper_time_counter > self.whisper_time_limit):
                 self.whisper_time_counter = 0
                 self.all_audio_data_list.clear()
+                self.local_agreement.reset_history()
 
             self.silence_counter = 0
             self.time_counter = 0

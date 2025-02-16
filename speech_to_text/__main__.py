@@ -44,7 +44,7 @@ def start_transcription():
                                    'cpu_threads': 0, 
                                    'num_workers': 1, 
                                    'local_files_only': False}
-        filtered_transcribe_settings = {'language': 'zh', 
+        filtered_transcribe_settings = {'language': 'en', 
                                         'task': 'transcribe', 
                                         'log_progress': True,
                                         'beam_size': 5, 
