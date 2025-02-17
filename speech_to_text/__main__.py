@@ -37,8 +37,8 @@ def start_transcription():
         # cpu, cuda, auto
         # cuda is gpu
         # need to download cuda if running it
-        filtered_model_settings = {'model_size_or_path': 'large-v2', 
-                                   'device': 'cuda', 
+        filtered_model_settings = {'model_size_or_path': 'medium', 
+                                   'device': 'cpu', 
                                    'device_index': 0, 
                                    'compute_type': 'default', 
                                    'cpu_threads': 0, 
