@@ -37,15 +37,15 @@ def start_transcription():
         # cpu, cuda, auto
         # cuda is gpu
         # need to download cuda if running it
-        filtered_model_settings = {'model_size_or_path': 'tiny', 
-                                   'device': 'cpu', 
+        filtered_model_settings = {'model_size_or_path': 'large-v2', 
+                                   'device': 'cuda', 
                                    'device_index': 0, 
                                    'compute_type': 'default', 
                                    'cpu_threads': 0, 
                                    'num_workers': 1, 
                                    'local_files_only': False}
         filtered_transcribe_settings = {'language': 'zh', 
-                                        'task': 'translate', 
+                                        'task': 'transcribe', 
                                         'log_progress': True,
                                         'beam_size': 5, 
                                         'best_of': 5, 

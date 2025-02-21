@@ -132,22 +132,20 @@ class AudioTranscriber:
                         confirmed_words = ""
                         print(f"Timestamps: Start({segment.start}), End({segment.end})")
                         print(f"Transcription Text: '{transcription_text}'\n") 
-                        print(f"Confirmed Text: '{confirmed_words}'") 
-                        eel.on_receive_message(f"{transcription_text} *** {confirmed_words}")
 
-                        # result = translate.translate_text(Text=segment.text, 
-                        # SourceLanguageCode="zh", 
-                        # TargetLanguageCode="en")
+                        result = translate.translate_text(Text=segment.text, 
+                        SourceLanguageCode="zh", 
+                        TargetLanguageCode="en")
 
-                        # translation_text = result.get("TranslatedText") + " "
-                        # eel.on_receive_message(transcription_text + " " + translation_text)
-                        # print(f"Translation Text: {translation_text}\n") 
+                        translation_text = result.get("TranslatedText") + " "
+                        eel.on_receive_message(transcription_text + " " + translation_text)
+                        print(f"Translation Text: {translation_text}\n") 
 
-                        # document_id = append_to_doc(self.creds, translation_text)
-                        # print(f"Success: Appended to Google Doc ID: '{document_id}'.")
+                        document_id = append_to_doc(self.creds, translation_text)
+                        print(f"Success: Appended to Google Doc ID: '{document_id}'.")
                         
-                        # translation_word_list = translation_text.split()
-                        # print(translation_word_list)
+                        translation_word_list = translation_text.split()
+                        print(translation_word_list)
 
                 # if queue is empty skip to next iteration in queue
                 except queue.Empty:
@@ -181,11 +179,6 @@ class AudioTranscriber:
             # handles prolonged silence, if silence counter reaches the limit
             # the silence counter is reset to 0
 
-            if (self.silence_counter > self.app_options.silence_limit) or (self.whisper_time_counter > self.whisper_time_limit):
-                self.whisper_time_counter = 0
-                self.all_audio_data_list.clear()
-                # self.local_agreement.reset_history()
-
             self.silence_counter = 0
             self.time_counter = 0
             # self.silence_counter += 1
@@ -198,8 +191,7 @@ class AudioTranscriber:
             if len(self.audio_data_list) > self.app_options.noise_threshold:
                 # self.save_audio_file(self.audio_data_list, "output.wav")
                 print("Pending: Adding audio data to the audio queue . . .")
-                self.all_audio_data_list.extend(self.audio_data_list)
-                concatenate_audio_data = np.concatenate(self.all_audio_data_list)
+                concatenate_audio_data = np.concatenate(self.audio_data_list)
                 self.audio_data_list.clear()
                 self.audio_queue.put(concatenate_audio_data)
             else:
