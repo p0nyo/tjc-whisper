@@ -19,7 +19,7 @@ def start_transcription():
     global transcriber, event_loop, thread
     try:
         filtered_app_settings = {'audio_device': 1, 
-                                 'silence_limit': 0, 
+                                 'silence_limit': 1, 
                                  'noise_threshold': 8, 
                                  'non_speech_threshold': 0.1, 
                                  'time_limit': 3,
@@ -37,15 +37,15 @@ def start_transcription():
         # cpu, cuda, auto
         # cuda is gpu
         # need to download cuda if running it
-        filtered_model_settings = {'model_size_or_path': 'medium', 
+        filtered_model_settings = {'model_size_or_path': 'tiny', 
                                    'device': 'cpu', 
                                    'device_index': 0, 
                                    'compute_type': 'default', 
                                    'cpu_threads': 0, 
                                    'num_workers': 1, 
                                    'local_files_only': False}
-        filtered_transcribe_settings = {'language': 'en', 
-                                        'task': 'transcribe', 
+        filtered_transcribe_settings = {'language': 'zh', 
+                                        'task': 'translate', 
                                         'log_progress': True,
                                         'beam_size': 5, 
                                         'best_of': 5, 

@@ -37,15 +37,19 @@ print_transcription_details(5, "A way the way forward is clear and the way is lo
 result = agreement.process_transcription("A way the way forward is clear and the way is long for me too die meow TEST PASSED")
 print_transcription_details(6, "A way the way forward is clear and the way is long for me too die meow TEST PASSED", result, agreement)
 
-transcription_split = agreement.transcription_history[-1].split()
-last_word = len(agreement.transcription_history[-1])
-print(transcription_split)
-final_unconfirmed_words = transcription_split[agreement.last_confirmed_position+1:last_word]
+# transcription_split = agreement.transcription_history[-1].split()
+# last_word = len(agreement.transcription_history[-1])
+# print(transcription_split)
+# final_unconfirmed_words = transcription_split[agreement.last_confirmed_position+1:last_word]
 
-print(' '.join(final_unconfirmed_words))
+# print(' '.join(final_unconfirmed_words))
+
+agreement.reset_history()
 
 print(agreement.process_transcription("Technology has revolutionized the way we live."))
 print(agreement.process_transcription("Technology has revolutionized the way we live and work, transforming industries, economies, and societies in profound ways."))
 print(agreement.process_transcription("Technology has revolutionized the way we live and work, transforming industries, economies, and societies in profound ways, from artificial intelligence and machine learning."))
 print(agreement.process_transcription("Technology has revolutionized the way we live and work, transforming industries, economies, and societies in profound ways, from artificial intelligence and machine learning to advanced robotics and automation."))
+
+
 

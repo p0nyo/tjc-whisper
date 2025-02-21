@@ -56,15 +56,14 @@ class LocalAgreement:
         self.confirmed_positions[word].append((transcription, position))
 
     def reset_history(self):
+        if len(self.transcription_history) != 0:
+            last_transcription_split = self.transcription_history[-1].split()
+            last_word_index = len(self.transcription_history[-1])
+            final_unconfirmed_words = last_transcription_split[self.last_confirmed_position+1:last_word_index]
+            print(last_transcription_split)
+            print(' '.join(final_unconfirmed_words))
         self.transcription_history.clear()
         self.confirmed_positions.clear()
-        if self.transcription_history:
-            last_transcription_split = self.transcription_history[-1].split()
-            last_word_index = len(last_transcription_split)
-            final_unconfirmed_words = last_transcription_split[self.last_confirmed_position+1:last_word_index]
-
-            print(final_unconfirmed_words)
-
         self.last_confirmed_position = -1
         
 

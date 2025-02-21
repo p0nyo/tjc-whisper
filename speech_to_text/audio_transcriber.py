@@ -80,8 +80,8 @@ class AudioTranscriber:
     # used for transcribing the audio
     async def transcribe_audio(self):
         transcribe_settings = self.transcribe_settings.copy()
-        transcribe_settings["without_timestamps"] = True
-        transcribe_settings["word_timestamps"] = False
+        transcribe_settings["without_timestamps"] = False
+        transcribe_settings["word_timestamps"] = True
         try:
             translate = self.boto_session.client(service_name="translate", region_name="ap-southeast-2", use_ssl=True)
         except Exception as e:
@@ -118,15 +118,19 @@ class AudioTranscriber:
                         print(f"Failure: {str(e)}")
                         continue
 
+                    
                     for segment in segments:
                         print("\nSuccess: Transcription Segments Found.\n")
+                        for word in segment.words:
+                            print(f"'{word.word}': Start:{word.start}, End:{word.end}")
 
                         transcription_text = segment.text + " "
 
                         transcription_word_list = transcription_text.split()
 
-                        confirmed_words = self.local_agreement.process_transcription(transcription_text)
-                        
+                        # confirmed_words = self.local_agreement.process_transcription(transcription_text)
+                        confirmed_words = ""
+                        print(f"Timestamps: Start({segment.start}), End({segment.end})")
                         print(f"Transcription Text: '{transcription_text}'\n") 
                         print(f"Confirmed Text: '{confirmed_words}'") 
                         eel.on_receive_message(f"{transcription_text} *** {confirmed_words}")
@@ -180,7 +184,7 @@ class AudioTranscriber:
             if (self.silence_counter > self.app_options.silence_limit) or (self.whisper_time_counter > self.whisper_time_limit):
                 self.whisper_time_counter = 0
                 self.all_audio_data_list.clear()
-                self.local_agreement.reset_history()
+                # self.local_agreement.reset_history()
 
             self.silence_counter = 0
             self.time_counter = 0
